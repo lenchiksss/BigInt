@@ -108,6 +108,54 @@ struct BigNumber {
         }
         return result;
     }
+
+    BigNumber ADD(const BigNumber& other) const {
+        BigNumber result;
+        uint64_t carry = 0;
+        size_t maxSize = std::max(digits.size(), other.digits.size());
+        result.digits.resize(maxSize, 0);
+
+        for (size_t i = 0; i < maxSize; ++i) {
+            uint64_t a = i < digits.size() ? digits[i] : 0;
+            uint64_t b = i < other.digits.size() ? other.digits[i] : 0;
+            uint64_t sum = a + b + carry;
+
+            result.digits[i] = sum;
+            carry = sum < a || sum < b ? 1 : 0;
+        }
+
+        if (carry) {
+            result.digits.push_back(carry);
+        }
+        return result;
+    }
+
+    BigNumber SUB(const BigNumber& other) const {
+        BigNumber result;
+        uint64_t borrow = 0;
+        result.digits.resize(digits.size(), 0);
+
+        for (size_t i = 0; i < digits.size(); ++i) {
+            uint64_t a = digits[i];
+            uint64_t b = i < other.digits.size() ? other.digits[i] : 0;
+            uint64_t diff = 0;
+
+            if (a < b + borrow) {
+                diff = (1ULL << 64) + a - b - borrow;
+                borrow = 1;
+            }
+            else {
+                diff = a - b - borrow;
+                borrow = 0;
+            }
+            result.digits[i] = diff;
+        }
+
+        while (result.digits.size() > 1 && result.digits.back() == 0) {
+            result.digits.pop_back();
+        }
+        return result;
+    }
 };
 
 int main() {
@@ -118,8 +166,8 @@ int main() {
     std::cout << "Converted Hex String: " << convertedHexString << std::endl;
 
     BigNumber numberA, numberB, numberC;
-    numberA.setNumberFromHexString("51bf608414ad5726a3c1bec098f77b1b54ffb2787f8d528a74c1d7fde6470ea4");
-    numberB.setNumberFromHexString("403db8ad88a3932a0b7e8189aed9eeffb8121dfac05c3512fdb396dd73f6331c");
+    numberA.setNumberFromHexString("7d7deab2affa38154326e96d350deee1");
+    numberB.setNumberFromHexString("97f92a75b3faf8939e8e98b96476fd22");
 
     numberC = numberA.XOR(numberB);
     std::cout << "XOR Result: " << numberC.getNumberAsHexString() << std::endl;
@@ -139,6 +187,12 @@ int main() {
 
     numberC = numberA.shiftL(shiftAmount);
     std::cout << "Shift Left Result: " << numberC.getNumberAsHexString() << std::endl;
+
+    numberC = numberA.ADD(numberB);
+    std::cout << "ADD Result: " << numberC.getNumberAsHexString() << std::endl;
+
+    numberC = numberA.SUB(numberB);
+    std::cout << "SUB Result: " << numberC.getNumberAsHexString() << std::endl;
 
     return 0;
 }
